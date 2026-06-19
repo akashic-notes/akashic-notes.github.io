@@ -1,0 +1,20 @@
+---
+import { getCollection } from "astro:content";
+import RecordPage from "../components/RecordPage.astro";
+import { sortNotes } from "../lib/notes";
+
+export async function getStaticPaths() {
+  const notes = sortNotes(await getCollection("notes"));
+  return notes
+    .filter((note) => note.data.path !== "/index")
+    .map((note) => ({
+      params: { slug: note.data.path.replace(/^\/+/, "") },
+      props: { note, notes },
+    }));
+}
+
+const { note, notes } = Astro.props;
+const html = note.rendered?.html ?? "";
+---
+
+<RecordPage note={note} notes={notes} html={html} />

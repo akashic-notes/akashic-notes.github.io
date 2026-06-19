@@ -1,0 +1,16 @@
+---
+import { getCollection } from "astro:content";
+import RecordPage from "../components/RecordPage.astro";
+import { sortNotes } from "../lib/notes";
+
+const notes = sortNotes(await getCollection("notes"));
+const home = notes.find((note) => note.data.path === "/index") ?? notes[0];
+
+if (!home) {
+  throw new Error("No Akashic notes were loaded for the site.");
+}
+
+const html = home.rendered?.html ?? "";
+---
+
+<RecordPage note={home} notes={notes} html={html} />

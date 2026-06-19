@@ -1,0 +1,325 @@
+---
+import type { NoteEntry } from "../lib/notes";
+import RecordTree from "./RecordTree.astro";
+import {
+  childNotes,
+  noteHref,
+  noteTree,
+  parentRecordPath,
+  siblingNavigation,
+} from "../lib/notes";
+
+interface Props {
+  note: NoteEntry;
+  notes: NoteEntry[];
+  html: string;
+}
+
+const { note, notes, html } = Astro.props;
+const children = childNotes(notes, note);
+const navigation = siblingNavigation(notes, note);
+const parentPath = parentRecordPath(note.data.path);
+const parent = parentPath ? notes.find((candidate) => candidate.data.path === parentPath) : null;
+const modified = String(note.data.metadata.last_modified ?? "");
+const recordID = String(note.data.metadata.recordID ?? "");
+const tree = noteTree(notes);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{note.data.title}</title>
+    <style>
+      :root {
+        color: #17130f;
+        background: #f7f3ec;
+        font-family:
+          ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      a {
+        color: #235a86;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 2rem;
+        max-width: 88rem;
+        margin: 0 auto;
+        padding: 3rem 1.25rem;
+      }
+
+      .record {
+        min-width: 0;
+        line-height: 1.65;
+      }
+
+      .record-header {
+        border-bottom: 1px solid #d8cec0;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+      }
+
+      .path {
+        color: #756a5d;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 0.875rem;
+        overflow-wrap: anywhere;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 6vw, 4rem);
+        line-height: 1;
+        margin: 0.35rem 0 0;
+      }
+
+      .content :first-child {
+        margin-top: 0;
+      }
+
+      .empty {
+        color: #756a5d;
+        border-left: 3px solid #d8cec0;
+        padding-left: 1rem;
+      }
+
+      .side-panel {
+        align-self: start;
+        position: sticky;
+        top: 1.25rem;
+      }
+
+      .side-panel.left {
+        border-right: 1px solid #d8cec0;
+        padding-right: 1.25rem;
+        width: min(16rem, 22vw);
+      }
+
+      .side-panel.right {
+        border-left: 1px solid #d8cec0;
+        padding-left: 1.25rem;
+        width: min(18rem, 24vw);
+      }
+
+      .side-panel:has(details.panel:not([open])) {
+        width: auto;
+      }
+
+      details.panel {
+        display: block;
+      }
+
+      details.panel > summary {
+        color: #40372e;
+        cursor: pointer;
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        list-style: none;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        user-select: none;
+      }
+
+      details.panel > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details.panel > summary::before {
+        content: "▾";
+        display: inline-block;
+        margin-right: 0.45rem;
+        transform: rotate(-90deg);
+      }
+
+      details.panel[open] > summary::before {
+        transform: rotate(0);
+      }
+
+      .section {
+        margin-bottom: 1.5rem;
+      }
+
+      .label {
+        color: #756a5d;
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        margin-bottom: 0.45rem;
+        text-transform: uppercase;
+      }
+
+      .nav-list {
+        display: grid;
+        gap: 0.5rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .nav-list a {
+        display: block;
+        overflow-wrap: anywhere;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.2em;
+      }
+
+      .tree-list {
+        display: grid;
+        gap: 0.2rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .tree-list .tree-list {
+        border-left: 1px solid #ded5ca;
+        margin: 0.25rem 0 0.35rem 0.45rem;
+        padding-left: 0.7rem;
+      }
+
+      .tree-list a {
+        display: block;
+        border-radius: 4px;
+        color: #40372e;
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 0.9rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+        padding: 0.2rem 0.35rem;
+        text-decoration: none;
+      }
+
+      .tree-list a:hover {
+        background: #eee6da;
+      }
+
+      .tree-list a[aria-current="page"] {
+        background: #235a86;
+        color: #fff;
+      }
+
+      .meta {
+        color: #756a5d;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 0.78rem;
+        overflow-wrap: anywhere;
+      }
+
+      .pager {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-top: 3rem;
+        border-top: 1px solid #d8cec0;
+        padding-top: 1rem;
+      }
+
+      .pager a {
+        max-width: 45%;
+        overflow-wrap: anywhere;
+      }
+
+      @media (max-width: 760px) {
+        .shell {
+          display: block;
+          padding-top: 2rem;
+        }
+
+        .side-panel {
+          position: static;
+        }
+
+        .side-panel.left,
+        .side-panel.right {
+          border-left: 0;
+          border-right: 0;
+          border-top: 1px solid #d8cec0;
+          margin-top: 2rem;
+          padding-left: 0;
+          padding-right: 0;
+          padding-top: 1.25rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="side-panel left">
+        <details class="panel" open>
+          <summary>Tree</summary>
+          <nav aria-label="Record tree">
+            <RecordTree nodes={tree} current={note} />
+          </nav>
+        </details>
+      </aside>
+
+      <article class="record">
+        <header class="record-header">
+          <div class="path">{note.data.path}</div>
+          <h1>{note.data.title}</h1>
+        </header>
+
+        <div class="content">
+          {html ? <Fragment set:html={html} /> : <p class="empty">No body content for this record.</p>}
+        </div>
+
+        <nav class="pager" aria-label="Record navigation">
+          {navigation.previous ? <a href={noteHref(navigation.previous)}>Previous: {navigation.previous.data.title}</a> : <span></span>}
+          {navigation.next ? <a href={noteHref(navigation.next)}>Next: {navigation.next.data.title}</a> : <span></span>}
+        </nav>
+      </article>
+
+      <aside class="side-panel right">
+        <details class="panel" open>
+          <summary>Details</summary>
+          <section class="section">
+            <div class="label">Position</div>
+            <div class="meta">{navigation.index + 1} / {navigation.total}</div>
+          </section>
+
+          {parent && (
+            <section class="section">
+              <div class="label">Parent</div>
+              <a href={noteHref(parent)}>{parent.data.title}</a>
+            </section>
+          )}
+
+          <section class="section">
+            <div class="label">Children</div>
+            {
+              children.length > 0 ? (
+                <ul class="nav-list">
+                  {children.map((child) => (
+                    <li><a href={noteHref(child)}>{child.data.title}</a></li>
+                  ))}
+                </ul>
+              ) : (
+                <div class="meta">None</div>
+              )
+            }
+          </section>
+
+          <section class="section">
+            <div class="label">Record</div>
+            <div class="meta">{recordID}</div>
+            {modified && <div class="meta">{modified}</div>}
+          </section>
+        </details>
+      </aside>
+    </main>
+  </body>
+</html>
