@@ -1,5 +1,5 @@
 import { defineCollection } from "astro:content";
-import { akashicNotesLoader } from "@akashic-notes/astro-collection";
+import { akashicNotesLoader } from "@akashic-notes/astro-collection-loader";
 
 const notes = defineCollection({
   loader: akashicNotesLoader({

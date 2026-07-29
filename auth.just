@@ -25,7 +25,7 @@ server = HTTPServer(("localhost", 3000), Handler)
 server.serve_forever()
 '''
 
-# Authorize with GitHub and store the token used by @akashic-notes/astro-collection.
+# Authorize with GitHub and store the token used by @akashic-notes/astro-collection-loader.
 github-staging:
     #!/usr/bin/env bash
     set -euo pipefail

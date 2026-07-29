@@ -10,7 +10,7 @@
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check"
   },
   "dependencies": {
-    "@akashic-notes/astro-collection": "file:../astro-collection",
+    "@akashic-notes/astro-collection-loader": "0.0.0-main.f881a90",
     "astro": "^5.17.0"
   },
   "devDependencies": {
